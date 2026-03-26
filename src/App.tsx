@@ -1,155 +1,150 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { EChartsOption } from 'echarts';
-import EChart from './components/EChart';
-import type { TelemetryPoint } from './types/telemetry';
-import { API_BASE_URL, startTelemetryPolling } from './utils/api';
-import './App.css';
+import { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Layout, Menu, ConfigProvider, theme } from 'antd';
+import {
+  DashboardOutlined,
+  MobileOutlined,
+  LineChartOutlined,
+  TeamOutlined,
+  SettingOutlined,
+  AppstoreOutlined,
+  ThunderboltOutlined,
+} from '@ant-design/icons';
+import { ThemeProvider, useTheme } from './components/ThemeContext';
+import Dashboard from './pages/Dashboard';
+import DeviceManagement from './pages/DeviceManagement';
+import DataCenter from './pages/DataCenter';
+import UserPermission from './pages/UserPermission';
+import SystemSettings from './pages/SystemSettings';
+import MiniProgram from './pages/MiniProgram';
 
-const POLLING_INTERVAL_MS = 8000;
-const MAX_POINTS = 30;
+const { Sider, Header, Content } = Layout;
 
-function formatTimeLabel(timestamp: string): string {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) {
-    return timestamp;
-  }
+const menuItems = [
+  { key: '/dashboard', icon: <DashboardOutlined />, label: '大盘概览' },
+  { key: '/devices', icon: <MobileOutlined />, label: '设备管理' },
+  { key: '/data-center', icon: <LineChartOutlined />, label: '数据图表中心' },
+  { key: '/users', icon: <TeamOutlined />, label: '用户权限' },
+  { key: '/settings', icon: <SettingOutlined />, label: '系统设置' },
+  { key: '/miniprogram', icon: <AppstoreOutlined />, label: '平台中枢' },
+];
 
-  return date.toLocaleTimeString('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
+function AppLayout() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
+  const { isDark } = useTheme();
+
+  const bg = isDark ? '#0a0e1a' : '#f0f2f5';
+  const cardBg = isDark ? '#111827' : '#ffffff';
+  const border = isDark ? '#1e293b' : '#e2e8f0';
+  const textPri = isDark ? '#e2e8f0' : '#1e293b';
+  const textSec = isDark ? '#94a3b8' : '#64748b';
+  const textMuted = isDark ? '#64748b' : '#94a3b8';
+
+  return (
+    <Layout style={{ height: '100vh', background: bg }}>
+      <Sider
+        collapsible
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
+        width={220}
+        trigger={null}
+        style={{ background: cardBg, borderRight: `1px solid ${border}` }}
+      >
+        <div style={{
+          height: 64,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          paddingLeft: collapsed ? 0 : 20,
+          gap: 10,
+          borderBottom: `1px solid ${border}`,
+        }}>
+          <ThunderboltOutlined style={{ fontSize: 22, color: '#1890ff' }} />
+          {!collapsed && (
+            <span style={{ color: textPri, fontWeight: 700, fontSize: 15, whiteSpace: 'nowrap' }}>
+              智能护膝管理平台
+            </span>
+          )}
+        </div>
+        <Menu
+          theme={isDark ? 'dark' : 'light'}
+          mode="inline"
+          selectedKeys={[location.pathname]}
+          items={menuItems}
+          onClick={({ key }) => navigate(key)}
+          style={{ background: 'transparent', borderRight: 0 }}
+        />
+        {!collapsed && (
+          <div style={{ position: 'absolute', bottom: 60, left: 16, right: 16, padding: 12, background: isDark ? '#1e293b' : '#f0f2f5', borderRadius: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+              <span style={{ color: textSec, fontSize: 12 }}>系统运行正常</span>
+            </div>
+            <span style={{ color: textMuted, fontSize: 11 }}>v1.0.0 · 2026-03-25</span>
+          </div>
+        )}
+      </Sider>
+      <Layout>
+        <Header style={{
+          background: cardBg,
+          padding: '0 24px',
+          display: 'flex',
+          alignItems: 'center',
+          borderBottom: `1px solid ${border}`,
+          height: 64,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <span style={{ color: textSec, fontSize: 18, cursor: 'pointer' }} onClick={() => setCollapsed(!collapsed)}>
+              {collapsed ? '☰' : '✕'}
+            </span>
+            <div style={{ background: isDark ? '#1e293b' : '#f0f2f5', borderRadius: 6, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+              <span style={{ color: textSec, fontSize: 13 }}>4 台设备在线</span>
+            </div>
+          </div>
+        </Header>
+        <Content style={{ padding: 24, overflow: 'auto', background: bg }}>
+          <Outlet />
+        </Content>
+      </Layout>
+    </Layout>
+  );
+}
+
+function ThemedApp() {
+  const { isDark } = useTheme();
+
+  return (
+    <ConfigProvider
+      theme={{
+        algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        token: { colorPrimary: '#1890ff', borderRadius: 8 },
+      }}
+    >
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<AppLayout />}>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="devices" element={<DeviceManagement />} />
+            <Route path="data-center" element={<DataCenter />} />
+            <Route path="users" element={<UserPermission />} />
+            <Route path="settings" element={<SystemSettings />} />
+            <Route path="miniprogram" element={<MiniProgram />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ConfigProvider>
+  );
 }
 
 function App() {
-  const [series, setSeries] = useState<TelemetryPoint[]>([]);
-  const [error, setError] = useState<string>('');
-  const [lastUpdated, setLastUpdated] = useState<string>('');
-
-  useEffect(() => {
-    const stop = startTelemetryPolling(
-      (points) => {
-        const next = points.slice(-MAX_POINTS);
-        setSeries(next);
-        setError('');
-        setLastUpdated(new Date().toLocaleString('zh-CN'));
-      },
-      (message) => {
-        setError(`数据拉取失败：${message}`);
-      },
-      POLLING_INTERVAL_MS,
-    );
-
-    return () => {
-      stop();
-    };
-  }, []);
-
-  const chartOption = useMemo<EChartsOption>(() => {
-    const labels = series.map((item) => formatTimeLabel(item.timestamp));
-    
-    // 提取 7 维全量数据
-    const meniscusData = series.map((item) => item.meniscus);
-    const emgData = series.map((item) => item.emg);
-    const lactateData = series.map((item) => item.lactate);
-    const tempData = series.map((item) => item.temp);
-    const attData = series.map((item) => item.att);
-    const vgrfData = series.map((item) => item.vgrf);
-    const vagData = series.map((item) => item.vag);
-
-    return {
-      tooltip: {
-        trigger: 'axis',
-        backgroundColor: 'rgba(17, 24, 39, 0.88)',
-        borderColor: 'rgba(255, 255, 255, 0.12)',
-        textStyle: { color: '#f8fafc' },
-      },
-      legend: {
-        top: 8,
-        textStyle: { color: '#3f4c5f', fontSize: 12 },
-        type: 'scroll', // 维度多了，开启图例滚动
-      },
-      grid: {
-        left: 24,
-        right: 16,
-        top: 56,
-        bottom: 24,
-        containLabel: true,
-      },
-      xAxis: {
-        type: 'category',
-        boundaryGap: false,
-        data: labels,
-        axisLabel: { color: '#6b7280', fontSize: 11 },
-        axisLine: { lineStyle: { color: '#d1d5db' } },
-      },
-      yAxis: [
-        {
-          type: 'value',
-          name: '主指标',
-          position: 'left',
-          axisLabel: { color: '#6b7280' },
-          splitLine: { lineStyle: { color: '#eef2f7' } },
-        },
-        {
-          type: 'value',
-          name: '肌电频段',
-          position: 'right',
-          axisLabel: { color: '#6b7280' },
-          splitLine: { show: false },
-        }
-      ],
-      series: [
-        { name: '半月板压力 (meniscus)', type: 'line', smooth: true, showSymbol: false, lineStyle: { width: 2, color: '#e35d32' }, yAxisIndex: 0, data: meniscusData },
-        { name: '肌电信号 (emg)', type: 'line', smooth: true, showSymbol: false, lineStyle: { width: 2, color: '#0f766e' }, yAxisIndex: 1, data: emgData },
-        { name: '乳酸浓度 (lactate)', type: 'line', smooth: true, showSymbol: false, lineStyle: { width: 2, color: '#3b82f6' }, yAxisIndex: 0, data: lactateData },
-        { name: '皮肤温度 (temp)', type: 'line', smooth: true, showSymbol: false, lineStyle: { width: 2, color: '#f59e0b' }, yAxisIndex: 0, data: tempData },
-        { name: '前向滑移 (att)', type: 'line', smooth: true, showSymbol: false, lineStyle: { width: 2, color: '#8b5cf6' }, yAxisIndex: 0, data: attData },
-        { name: '反作用力 (vgrf)', type: 'line', smooth: true, showSymbol: false, lineStyle: { width: 2, color: '#ec4899' }, yAxisIndex: 0, data: vgrfData },
-        { name: '声学摩擦 (vag)', type: 'line', smooth: true, showSymbol: false, lineStyle: { width: 2, color: '#64748b' }, yAxisIndex: 0, data: vagData },
-      ],
-    };
-  }, [series]);
-
-  const latest = series.at(-1);
-
   return (
-    <main className="dashboard-shell">
-      <header className="hero">
-        <p className="hero-tag">Smart Knee Data Service</p>
-        <h1>智能护膝实时看板</h1>
-        <p className="hero-subtitle">
-          面向 C 端用户的实时生理指标展示，按 {POLLING_INTERVAL_MS / 1000} 秒自动更新。
-        </p>
-      </header>
-
-      <section className="status-grid">
-        <article className="status-card">
-          <span className="status-label">API 基础地址</span>
-          <strong className="status-value">{API_BASE_URL}</strong>
-        </article>
-        <article className="status-card">
-          <span className="status-label">最近更新时间</span>
-          <strong className="status-value">{lastUpdated || '等待首轮请求...'}</strong>
-        </article>
-        <article className="status-card">
-          <span className="status-label">当前电量</span>
-          <strong className="status-value">{latest ? `${latest.battery.toFixed(1)}%` : '--'}</strong>
-        </article>
-      </section>
-
-      {error ? <section className="error-banner">{error}</section> : null}
-
-      <section className="chart-panel">
-        <div className="panel-head">
-          <h2>核心趋势图：七维全量数据实时追踪</h2>
-          <span>{series.length > 0 ? `当前样本: ${series.length}` : '暂无数据'}</span>
-        </div>
-        <div className="chart-wrap">
-          <EChart option={chartOption} style={{ height: 360 }} />
-        </div>
-      </section>
-    </main>
+    <ThemeProvider>
+      <ThemedApp />
+    </ThemeProvider>
   );
 }
 
