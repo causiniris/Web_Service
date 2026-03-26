@@ -5,6 +5,11 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? defaultBaseUrl;
 export const TELEMETRY_PATH = import.meta.env.VITE_TELEMETRY_PATH ?? '/api/telemetry';
 const REQUEST_TIMEOUT_MS = 10_000;
 
+function toValidNumber(value: unknown): number | null {
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
 function toTelemetryPoint(raw: unknown): TelemetryPoint | null {
   if (!raw || typeof raw !== 'object') {
     return null;
@@ -12,15 +17,40 @@ function toTelemetryPoint(raw: unknown): TelemetryPoint | null {
 
   const record = raw as Record<string, unknown>;
   const timestamp = typeof record.timestamp === 'string' ? record.timestamp : null;
-  const battery = typeof record.battery === 'number' ? record.battery : null;
-  const meniscus = typeof record.meniscus === 'number' ? record.meniscus : null;
-  const emg = typeof record.emg === 'number' ? record.emg : null;
+  const battery = toValidNumber(record.battery);
+  const meniscus = toValidNumber(record.meniscus);
+  const emg = toValidNumber(record.emg);
+  const lactate = toValidNumber(record.lactate);
+  const temp = toValidNumber(record.temp);
+  const att = toValidNumber(record.att);
+  const vgrf = toValidNumber(record.vgrf);
+  const vag = toValidNumber(record.vag);
 
-  if (!timestamp || battery === null || meniscus === null || emg === null) {
+  if (
+    !timestamp ||
+    battery === null ||
+    meniscus === null ||
+    emg === null ||
+    lactate === null ||
+    temp === null ||
+    att === null ||
+    vgrf === null ||
+    vag === null
+  ) {
     return null;
   }
 
-  return { timestamp, battery, meniscus, emg };
+  return {
+    timestamp,
+    battery,
+    meniscus,
+    emg,
+    lactate,
+    temp,
+    att,
+    vgrf,
+    vag,
+  };
 }
 
 function normalizePayload(payload: unknown): TelemetryPoint[] {
@@ -54,10 +84,6 @@ export async function fetchTelemetry(signal?: AbortSignal): Promise<TelemetryPoi
 
     const payload: unknown = await response.json();
     const points = normalizePayload(payload);
-
-    if (points.length === 0) {
-      throw new Error('返回数据为空或字段不匹配');
-    }
 
     return points;
   } finally {

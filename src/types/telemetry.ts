@@ -3,6 +3,11 @@ export interface TelemetryPoint {
   battery: number;
   meniscus: number;
   emg: number;
+  lactate: number;
+  temp: number;
+  att: number;
+  vgrf: number;
+  vag: number;
 }
 
 export interface TelemetryApiResponse {

@@ -24,12 +24,36 @@ function toPoint(raw) {
   const battery = Number(raw.battery);
   const meniscus = Number(raw.meniscus);
   const emg = Number(raw.emg);
+  const lactate = Number(raw.lactate);
+  const temp = Number(raw.temp);
+  const att = Number(raw.att);
+  const vgrf = Number(raw.vgrf);
+  const vag = Number(raw.vag);
 
-  if (Number.isNaN(battery) || Number.isNaN(meniscus) || Number.isNaN(emg)) {
+  if (
+    Number.isNaN(battery) ||
+    Number.isNaN(meniscus) ||
+    Number.isNaN(emg) ||
+    Number.isNaN(lactate) ||
+    Number.isNaN(temp) ||
+    Number.isNaN(att) ||
+    Number.isNaN(vgrf) ||
+    Number.isNaN(vag)
+  ) {
     return null;
   }
 
-  return { timestamp, battery, meniscus, emg };
+  return {
+    timestamp,
+    battery,
+    meniscus,
+    emg,
+    lactate,
+    temp,
+    att,
+    vgrf,
+    vag,
+  };
 }
 
 app.use(express.json({ limit: '1mb' }));
@@ -70,7 +94,7 @@ app.get('/api/telemetry', (_req, res) => {
 const distPath = path.resolve(__dirname, '../dist');
 app.use(express.static(distPath));
 
-app.get('/{*path}', (_req, res) => {
+app.get('*', (_req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
