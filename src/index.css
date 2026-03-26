@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+
+:root {
+  color-scheme: only light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: 'Space Grotesk', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  color: #122035;
+  background:
+    radial-gradient(circle at 8% 10%, rgba(255, 210, 174, 0.5), transparent 32%),
+    radial-gradient(circle at 95% 5%, rgba(170, 227, 246, 0.45), transparent 28%),
+    #f4f8fd;
+}

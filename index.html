@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>智能护膝数据服务系统</title>
+  </head>
+  <body>
+    <div id="root">应用加载中...</div>
+    <script>
+      if (window.location.protocol === 'file:') {
+        const root = document.getElementById('root');
+        if (root) {
+          root.innerHTML = '检测到你是直接打开本地文件。请用 npm run dev 或 npm run serve 后通过 http://localhost 访问页面。';
+          root.style.padding = '24px';
+          root.style.fontFamily = 'Microsoft YaHei, sans-serif';
+          root.style.color = '#1f2937';
+        }
+      }
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
