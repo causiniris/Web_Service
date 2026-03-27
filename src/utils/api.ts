@@ -1,7 +1,7 @@
 import type { TelemetryApiResponse, TelemetryPoint } from '../types/telemetry';
 
-const defaultBaseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://smart-knee-api.onrender.com';
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? defaultBaseUrl;
+// <-- 修复2：强制指向 Render 服务器，拒绝本地自娱自乐
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://smart-knee-platform.onrender.com';
 export const TELEMETRY_PATH = import.meta.env.VITE_TELEMETRY_PATH ?? '/api/telemetry';
 const REQUEST_TIMEOUT_MS = 10_000;
 
@@ -17,6 +17,11 @@ function toTelemetryPoint(raw: unknown): TelemetryPoint | null {
 
   const record = raw as Record<string, unknown>;
   const timestamp = typeof record.timestamp === 'string' ? record.timestamp : null;
+  
+  // <-- 修复3：前端也必须认识设备的 ID
+  const device_id = typeof record.device_id === 'string' ? record.device_id : 'UNKNOWN';
+  const mode = typeof record.mode === 'string' ? record.mode : 'UNKNOWN';
+
   const battery = toValidNumber(record.battery);
   const meniscus = toValidNumber(record.meniscus);
   const emg = toValidNumber(record.emg);
@@ -27,29 +32,17 @@ function toTelemetryPoint(raw: unknown): TelemetryPoint | null {
   const vag = toValidNumber(record.vag);
 
   if (
-    !timestamp ||
-    battery === null ||
-    meniscus === null ||
-    emg === null ||
-    lactate === null ||
-    temp === null ||
-    att === null ||
-    vgrf === null ||
-    vag === null
+    !timestamp || battery === null || meniscus === null || emg === null ||
+    lactate === null || temp === null || att === null || vgrf === null || vag === null
   ) {
     return null;
   }
 
   return {
     timestamp,
-    battery,
-    meniscus,
-    emg,
-    lactate,
-    temp,
-    att,
-    vgrf,
-    vag,
+    device_id, // 完整回传
+    mode,      // 完整回传
+    battery, meniscus, emg, lactate, temp, att, vgrf, vag,
   };
 }
 
@@ -94,7 +87,7 @@ export async function fetchTelemetry(signal?: AbortSignal): Promise<TelemetryPoi
 export function startTelemetryPolling(
   onSuccess: (points: TelemetryPoint[]) => void,
   onError: (errorMessage: string) => void,
-  intervalMs = 8000,
+  intervalMs = 5000,
 ): () => void {
   let stopped = false;
 
