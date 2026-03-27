@@ -1,5 +1,7 @@
 export interface TelemetryPoint {
   timestamp: string;
+  device_id: string; // <-- 新增：设备ID
+  mode: string;      // <-- 新增：运行模式
   battery: number;
   meniscus: number;
   emg: number;
@@ -12,5 +14,6 @@ export interface TelemetryPoint {
 
 export interface TelemetryApiResponse {
   data: TelemetryPoint[];
-  message?: string;
+  count?: number;
+  timestamp?: number;
 }
